@@ -1,0 +1,25 @@
+# Build artifacts
+bin/
+obj/
+*.o
+*.out
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test outputs
+test_all.sh
+
+# Claude Code
+.claude/
+
+# Backup files
+*.progressive_original.jpg
