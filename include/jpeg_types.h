@@ -33,12 +33,24 @@ typedef struct {
     bool is_set;
 } quantization_table_t;
 
+/* Fast Huffman lookup table entry */
+#define HUFF_LOOKAHEAD 8  /* Number of bits for fast lookup */
+
+typedef struct {
+    uint8_t symbol;  /* Decoded symbol (0-255) */
+    uint8_t bits;    /* Number of bits to consume (0 = not a valid code) */
+} huffman_lookup_t;
+
 /* Huffman table */
 typedef struct {
     uint8_t bits[17];           /* Number of codes of each length (1-16), bits[0] unused */
     uint8_t huffval[256];       /* Symbol values */
     uint16_t codes[256];        /* Generated Huffman codes for each symbol */
     uint8_t code_lengths[256];  /* Code length for each symbol */
+
+    /* Fast lookup table for codes <= HUFF_LOOKAHEAD bits */
+    huffman_lookup_t lookup[1 << HUFF_LOOKAHEAD];  /* 256 entries */
+
     bool is_set;
 } huffman_table_t;
 
@@ -117,6 +129,19 @@ typedef struct {
 } jpeg_decoder_t;
 
 /* Zigzag scan order for 8x8 blocks */
+/* Zigzag scan order - maps zigzag position to natural (row-major) position */
+static const int jpeg_natural_order[BLOCK_SIZE] = {
+     0,  1,  8, 16,  9,  2,  3, 10,
+    17, 24, 32, 25, 18, 11,  4,  5,
+    12, 19, 26, 33, 40, 48, 41, 34,
+    27, 20, 13,  6,  7, 14, 21, 28,
+    35, 42, 49, 56, 57, 50, 43, 36,
+    29, 22, 15, 23, 30, 37, 44, 51,
+    58, 59, 52, 45, 38, 31, 39, 46,
+    53, 60, 61, 54, 47, 55, 62, 63
+};
+
+/* Inverse zigzag - maps natural position to zigzag position */
 static const int zigzag[BLOCK_SIZE] = {
      0,  1,  5,  6, 14, 15, 27, 28,
      2,  4,  7, 13, 16, 26, 29, 42,

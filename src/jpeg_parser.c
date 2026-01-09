@@ -207,12 +207,19 @@ int parse_dqt(jpeg_decoder_t *decoder) {
             JPEG_ERROR("Only 8-bit quantization tables supported");
         }
 
-        /* Read 64 coefficients */
+        /* Read 64 coefficients (stored in zigzag order) and convert to natural order */
+        uint8_t temp[64];
         for (int i = 0; i < 64; i++) {
             if (decoder->current_pos >= decoder->data_size) {
                 JPEG_ERROR("Truncated quantization table");
             }
-            decoder->quant_tables[table_id].table[i] = decoder->data[decoder->current_pos++];
+            temp[i] = decoder->data[decoder->current_pos++];
+        }
+
+        /* De-zigzag: file is in zigzag order, we need natural order for IDCT */
+        extern const int jpeg_natural_order[64];
+        for (int i = 0; i < 64; i++) {
+            decoder->quant_tables[table_id].table[jpeg_natural_order[i]] = temp[i];
         }
 
         decoder->quant_tables[table_id].is_set = true;
